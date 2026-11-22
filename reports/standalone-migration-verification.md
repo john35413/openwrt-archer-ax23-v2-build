@@ -33,7 +33,7 @@ Intentional history/tree differences: AX23 subtree promoted to repository root; 
 
 ## Security and repository integrity
 
-Scanned all named objects reachable from local `main` and `dev` before publication: **719** named objects; no raw log paths, build/cache/private-data paths, firmware/binary/credential file paths, or checked credential/private-key markers found. `git fsck --full --no-reflogs` passed. This is a targeted static scan, not a guarantee against every possible secret encoding. No firmware image or board-data blob is tracked.
+Scanned all named objects reachable from local `main` and `dev` before publication: **719** named objects; no raw log paths, build/cache/private-data paths, firmware/binary/credential file paths, or checked credential/private-key markers found. `git fsck --full --no-reflogs` passed. This is a targeted static scan, not a guarantee against every possible secret encoding. No firmware image or board-data blob is tracked. Post-publication, the same audit was rerun against main/dev at `80daab2744294e2a393b3a28a6ab9a5e3a483602`: **734** reachable named objects, the same zero findings, and fsck PASS.
 
 ## Tests and artifact (no rebuild)
 
