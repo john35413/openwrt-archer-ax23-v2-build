@@ -86,8 +86,8 @@
     "cache_reuse": "build/, upstream/ and board-data/ are ignored local symlinks to the preserved original project; no large trees were copied",
     "local_artifact": "artifacts/ram-only/dev/openwrt-qualcommax-ipq50xx-tplink_archer-ax23-v2-initramfs-uImage.itb (local symlink to original artifact)",
     "destination_repository": "https://github.com/john35413/openwrt-archer-ax23-v2-build",
-    "status": "prepared for publication; remote refs verified after publication",
-    "public": false,
+    "status": "public repository created; initial main/dev publication pending",
+    "public": true,
     "local_path_safety_fix": "clean-dev realpath containment preflight; focused symlink-cache regression passes; no firmware output change",
     "source_subtree_files": 158,
     "public_main_tracked_files": 162,
@@ -115,6 +115,7 @@
         "tests/unit/test_clean_symlink_guard.sh"
       ],
       "numbered_patch_sha256_mismatches": 0
-    }
+    },
+    "initial_local_publication_candidate": "130ac92bd9c8faa3d47ccb2c618b5c7fed22c8e0"
   }
 }

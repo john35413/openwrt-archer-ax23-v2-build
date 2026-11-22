@@ -1,6 +1,6 @@
 # Codex final handover
 
-**State:** Local source verification is complete; first publication to `john35413/openwrt-archer-ax23-v2-build` is pending. When created, `main` will be the baseline and `dev` the development branch. Confirm actual GitHub refs after push. The local build and offline validation are complete; physical use remains conditional. No router operation occurred.
+**State:** The public repository `https://github.com/john35413/openwrt-archer-ax23-v2-build` has been created. The verified local baseline is being published to `main` and `dev`; confirm the live branch SHAs after push. The local build and offline validation are complete; physical use remains conditional. No router operation occurred.
 
 ## Revisions
 
