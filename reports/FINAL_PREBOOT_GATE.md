@@ -39,6 +39,18 @@ router as part of this preparation.
   DRAM size are **not** established by this arithmetic; `bdinfo` and the exact
   bootloader's output are mandatory. Do not treat the validator's 48 MiB
   extent bound as a U-Boot relocation guarantee.
+- Qualcomm's public IPQ5018 U-Boot header defines CONFIG_SYS_BOOTM_LEN as
+  0x4000000 (64 MiB), defines CONFIG_IPQ_NO_RELOC, and sets CONFIG_SYS_TEXT_BASE
+  to 0x4A920000. Those are GPL source configuration values, not measurements of
+  this router's running bootloader. The planned FIT byte range ends at
+  0x44cb6910, below that configured text base, but the 64 MiB BOOTM_LEN is a
+  size limit, not proof of safe placement or free workspace. The same header
+  has a crash-dump temporary address at 0x44000000; that does not establish
+  whether the shipped build reserves or uses the range during a normal boot.
+  Only this unit's version, bdinfo, bootloader build, and memory reservations
+  can close the TFTP/LMB/relocation/working-FDT question. Stop before transfer
+  if those observations are unavailable or conflict with the FIT and kernel
+  extents.
 - Re-ran artifact validator: **77 checks PASS, 1 INFO, 0 FAIL** (three helper
   stdout PASS lines are not independent checks). It confirms target/FIT, all 16
   read-only partitions, EU board data and radio startup files, MTD configuration,
@@ -53,6 +65,25 @@ router as part of this preparation.
   the private stock `bdwlan` fixture is not present at the test's expected local
   path; no fixture was copied or exposed. The tests use synthetic data for the
   other cases. No QEMU or hardware test ran.
+- Early-userspace source verification: the actual FIT kernel component was
+  extracted and LZMA-decompressed; its 23,552,008-byte output is byte-identical
+  to the prepared Image-initramfs (SHA256
+  9275743855f1cfc0d1a9b001933e846d5fd3371f20c346e3a1e07ee418774576). The
+  exact generated initramfs CPIO lists /init, /bin/sh, /sbin/init, and
+  /sbin/procd. Prepared Linux 6.18.55 init/main.c sets the default ramdisk
+  command to /init, assigns rdinit= to that command, tries it before
+  execute_command from init=, and returns immediately on success. Thus
+  init=/bin/sh does not override this image's successful /init. rdinit=/bin/sh
+  selects the existing shell and, if it executes, bypasses /init and /sbin/procd
+  startup. This is source/image evidence, not a physical boot observation.
+  Kernel built-in driver probes and initcalls have already run before this
+  user-mode command; this gate cannot prevent a built-in switch probe or
+  GPIO39 output.
+- The image's actual /init is the OpenWrt initramfs script: it sets INITRAMFS=1,
+  mounts/copies into /new_root, then runs exec switch_root /new_root /sbin/init.
+  Therefore exec /init is a valid deliberate transition to normal OpenWrt
+  startup, not a way to remain in the safety shell. Run it only after the shell
+  checks pass and the owner explicitly approves normal startup.
 - Local TFTP staging copy:
   `C:\Users\jfits\Documents\AX23-TFTP-fa4783\openwrt-qualcommax-ipq50xx-tplink_archer-ax23-v2-initramfs-uImage.itb`.
   The directory contains only this ITB; the copied size/hash match the WSL
@@ -164,7 +195,7 @@ logging first. At a naturally available stock U-Boot prompt, observe and record:
   metadata. `bootm` performs FIT hash checks before transferring control to the
   kernel; if it reports any hash, configuration or authentication error, leave
   the prompt and stop. Never bypass security.
-- Whether U-Boot will pass a temporary `init=/bin/sh` argument. At the prompt,
+- Whether U-Boot will pass a temporary `rdinit=/bin/sh` argument. At the prompt,
   preserve/record the full original `bootargs`; only append the early-shell
   argument using syntax confirmed for that build, then print it back. Do not
   remove existing console tokens by guesswork. `setenv` is a volatile change;
@@ -190,7 +221,7 @@ addresses and memory map are verified:
 
 ```text
 printenv bootargs
-setenv bootargs "${bootargs} init=/bin/sh"
+setenv bootargs "${bootargs} rdinit=/bin/sh"
 printenv bootargs
 setenv serverip 192.168.1.10
 setenv ipaddr 192.168.1.1
@@ -262,12 +293,12 @@ driver-reported power, emitted RF power, and client RSSI.
 | 3 | Powered stock measurement with high-impedance instruments: identify TX idle/activity and measure voltage. | Signal within confirmed router and adapter RX limits. | Out-of-spec, unstable or unknown level. | Stock router powered, no configuration change. | Owner approval to power/open unit and probe. |
 | 4 | Passive GPIO measurement: continuity while unpowered and/or high-impedance stock waveform; map 26, 39, switch `nRESET`. | GPIO39 proven electrically safe for the current image's low/high output, with 26/39 relationship recorded. | Any unknown/shared/unsafe line; inability to establish safe voltage/polarity. | No driven GPIO; unpowered continuity or passive observation only. | Owner approval to open/probe; never drive. |
 | 5 | Receive-only UART: verified GND and router TX -> adapter RX; 115200 8N1; cold-start stock once if approved. Do not connect adapter TX. | Clean serial capture and actual U-Boot identity/prompt observed. | Electrical anomalies, no reliable prompt, unsafe voltage. | Power cycle only; no env change. | Yes, for power cycle/opening. |
-| 6 | At U-Boot, record version/help/env/bdinfo/bootargs; inspect memory, bootm/security path, and temporary early-shell support. | Sufficient non-overlapping DRAM/LMB regions, generic bootm path with no bypass, valid temporary `init=/bin/sh` command. FIT hashes are checked by bootm before kernel handoff. | Unknown memory map, signature rejection/bypass request, unsupported early shell. | Read-only commands; no writes. | Owner approval to interrupt autoboot/console access. |
+| 6 | At U-Boot, record version/help/env/bdinfo/bootargs; inspect memory, bootm/security path, and temporary early-shell support. | Sufficient non-overlapping DRAM/LMB regions, generic bootm path with no bypass, valid temporary `rdinit=/bin/sh` command. FIT hashes are checked by bootm before kernel handoff. | Unknown memory map, signature rejection/bypass request, unsupported early shell. | Read-only commands; no writes. | Owner approval to interrupt autoboot/console access. |
 | 7 | Prepare isolated Windows Ethernet/Tftpd64; select dedicated NIC only; static host addressing only after approval; local TFTP GET to temp file and SHA compare; stop server. | TFTP GET succeeds; staged and retrieved hashes match; server bound to intended NIC. | Interface shared with other network, address conflict, firewall change needed without approval, hash mismatch. | PC network config/service changes; router untouched. | Yes, for NIC/address/firewall and server start. |
 | 8 | Verify staged ITB Windows SHA/size; only after all gates, temporary U-Boot `setenv`; TFTP exact named image to `0x44000000`; verify byte count. | 13,330,704 bytes; U-Boot map confirms buffer safe; no server/network mismatch. | Any prior gate unresolved, wrong bytes/size, transfer error. | Volatile U-Boot env and RAM transfer only. | Yes, explicit owner go-ahead for first RAM boot. |
-| 9 | `bootm 0x44000000` selects default `config@mp02.1`; capture UART and stop at early shell. | FIT hash/config accepted before handoff; early shell reached; no panic, unexpected storage/GPIO activity. | FIT/auth failure, memory/relocation warning, normal userspace startup instead of early shell, unexpected writes/GPIO. | Executes kernel from RAM; kernel probes may drive GPIO39 and attach UBI read-only. | Yes, same first-boot approval. |
-| 10 | In early shell only, mount `/proc` and `/sys` read-only if not already mounted; inspect RAM root, all 16 MTD flags and attached UBI read-only status; no writes. | All expected read-only facts observed, no flash write indication. | Any writable partition/UBI, unexpected write message, missing early shell. | Mounts pseudo-filesystems read-only; read-only queries. | Owner approval to continue. |
-| 11 | Only after step 10 passes, `exec /sbin/init`; then verify Linux IP/SSH before streaming diagnostics. | Normal startup intentionally begins; SSH independently verified before diagnostics. | Unexpected interface, missing protection, radio/GPIO issue. | Starts services and may initialize Wi-Fi. | Yes, owner approval. |
+| 9 | `bootm 0x44000000` selects default `config@mp02.1`; capture UART and verify `/bin/sh` is the `rdinit` shell. | FIT hash/config accepted; expected shell prompt appears; `/init` and procd have not run. | Shell is not reached as expected, normal startup begins, console is ambiguous, or unexpected writes/GPIO appear. STOP; do not run any continuation command. | Executes kernel from RAM; built-in probes may drive GPIO39 and attach UBI before the shell. | Yes, same first-boot approval. |
+| 10 | Only after the expected early shell is confirmed, mount `/proc` and `/sys` read-only if not already mounted; inspect RAM root, all 16 MTD flags and attached UBI read-only status; no writes. | All expected read-only facts observed, no flash write indication. | Any writable partition/UBI, unexpected write message, missing early shell. | Mounts pseudo-filesystems read-only; read-only queries. | Owner approval to continue. |
+| 11 | Only after step 10 passes and the owner approves normal startup, `exec /init`; then verify Linux IP/SSH before streaming diagnostics. | Normal startup intentionally begins; SSH independently verified before diagnostics. | Unexpected interface, missing protection, radio/GPIO issue. | Starts services and may initialize Wi-Fi. | Yes, owner approval. |
 | 12 | Collect read-only diagnostic bundle and perform limited acceptance tests. | Fresh evidence and source revision recorded. | Sensitive output exposure, any write-capable tool requested, instability. | Diagnostics read only; tests may change RAM/runtime config. | Yes for each test that changes config or restarts services. |
 
 ### Failure / STOP procedure
@@ -275,7 +306,7 @@ driver-reported power, emitted RF power, and client RSSI.
 - Before `bootm`: leave U-Boot without `saveenv` or storage commands. Preserve
   the UART log and stop; do not retry blindly.
 - During/after `bootm`: do not run flash, erase, UBI write, sysupgrade or
-  recovery-upload commands. At the early shell, do not execute `/sbin/init` if
+  recovery-upload commands. At the early shell, do not execute `/init` or `/sbin/init` if
   any check is unexpected. Leave the device at the shell while capturing logs;
   only power down after confirming no flash activity is occurring. If that
   cannot be confirmed, keep power stable and seek a hardware review.

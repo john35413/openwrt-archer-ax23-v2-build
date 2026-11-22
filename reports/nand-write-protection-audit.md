@@ -27,8 +27,10 @@ root filesystem). The lab results are **SIM**. Nothing was run on a router.
 The AX23 DTS also appends `root=/dev/ubiblock0_1 coherent_pool=2M`; the exact
 U-Boot environment and final command line on our unit are unverified. Do not
 assume third-party bootargs. The first-boot procedure records `printenv
-bootargs` and temporarily appends `init=/bin/sh` to stop normal OpenWrt init
-before userspace services and Wi-Fi startup. This does not disable kernel MTD
+bootargs` and temporarily appends `rdinit=/bin/sh` to select `/bin/sh` before
+the working initramfs `/init`, procd, services and Wi-Fi startup. `init=/bin/sh`
+alone is not a guard because Linux tries the working `rdinit` command (`/init`)
+first. If the expected shell is not reached, STOP; do not continue to `/init`. This does not disable kernel MTD
 or UBI discovery/attachment, and it is not a substitute for checking runtime
 read-only flags. Never use `saveenv`.
 

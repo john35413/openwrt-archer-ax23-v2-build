@@ -23,7 +23,7 @@ signature bypasses.
 | TFTP | Use a Windows-native TFTP server bound only to a dedicated physical Ethernet interface on an isolated direct link, or an explicitly reviewed equivalent. WSL2 default NAT is not assumed reachable. Do not change firewall, interface, or router network configuration without owner approval. |
 
 `setenv` changes only the current volatile U-Boot environment unless `saveenv`
-is issued. `saveenv` is prohibited. Use the temporary `init=/bin/sh` first
+is issued. `saveenv` is prohibited. Use the temporary `rdinit=/bin/sh` first
 kernel boot gate in `reports/first-ram-boot-checklist.md`; do not start normal
 OpenWrt userspace/Wi-Fi until the early shell checks pass.
 
@@ -40,7 +40,7 @@ physical unit.
    `help bootm`, and the actual FIT verification policy. Confirm the actual
    DRAM map safely contains the proposed transfer region and the kernel / all
    bootm relocation regions. Stop if the bootloader's memory use overlaps.
-3. Verify existing `bootargs`. Append `init=/bin/sh` using temporary `setenv`
+3. Verify existing `bootargs`. Append `rdinit=/bin/sh` using temporary `setenv`
    syntax confirmed for this prompt, then `printenv bootargs` to verify. Keep
    all existing console tokens; do not guess or delete tokens. If this cannot
    be safely constructed, STOP before transfer.
@@ -51,15 +51,16 @@ physical unit.
 5. `bootm 0x44000000` selects the FIT's verified default `config@mp02.1`.
    Proceed only if the actual bootloader accepts the image/hash without bypass.
    Do not add `#config@mp02.1` syntax unless that exact U-Boot supports it.
-6. Capture complete UART output to a private local file. Expect the early shell,
-   not normal OpenWrt startup. Check RAM root, all 16 MTD partitions
+6. Capture complete UART output to a private local file. Expect the /bin/sh selected by rdinit, not /init or normal OpenWrt startup. Check RAM root, all 16 MTD partitions
    `writeable=no`, and all attached UBI devices read-only. Do not attempt a test
    write. If unexpected storage or GPIO activity appears, remain at the shell,
-   do not run `/sbin/init`, and collect the UART evidence. Do not issue flash
-   commands. If the shell is absent or normal services start unexpectedly,
-   STOP; do not continue with Wi-Fi tests.
-7. Only after the early checks pass, an owner may approve `exec /sbin/init` to
-   start normal OpenWrt services. Confirm Linux networking and SSH access before
+   do not run `/init` or `/sbin/init`, and collect the UART evidence. Do not issue flash
+   commands. If the expected shell is not reached, /init or normal services start, or
+   the console is ambiguous, STOP immediately. Do not run `exec /init`,
+   `/sbin/init`, Wi-Fi tests or any continuation command.
+7. Only after the early checks pass, an owner may approve `exec /init` to perform
+   the image's initramfs `switch_root` sequence and start `/sbin/init` (procd)
+   and normal OpenWrt services. Confirm Linux networking and SSH access before
    any streamed diagnostics. The PC must stream `tests/hardware/ax23-selfdiag.sh`
    from this source checkout; diagnostics are not embedded in the firmware.
 

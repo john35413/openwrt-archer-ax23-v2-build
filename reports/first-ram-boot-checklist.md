@@ -25,21 +25,28 @@ reserved-memory behavior remain hardware observations, not offline facts.
 
 ## Required early stop before Wi-Fi
 
-The first boot must use a temporary U-Boot `bootargs` addition
-`init=/bin/sh`, after recording the existing `bootargs` and confirming the
-console syntax at the actual prompt. This overrides normal OpenWrt init so
-procd and userspace module/radio startup do not begin. It does **not** prevent
-kernel built-in probes, switch GPIO activity, or kernel UBI attachment; passive
-GPIO checks and the NAND source/build evidence are still required before boot.
-If the exact U-Boot does not pass this temporary argument or the early shell is
-not reached, stop and do not proceed to normal startup. Do not remove existing
-console or safety parameters by guessing. `setenv` is volatile for the current
-boot; never run `saveenv`.
+The first boot must use a temporary U-Boot bootargs addition
+`rdinit=/bin/sh`, after recording the existing bootargs and confirming the
+console syntax at the actual prompt. Linux 6.18.55 tries the initramfs
+rdinit= command before the init= fallback. The image contains a working /init,
+so init=/bin/sh alone does not select the shell. If /bin/sh is reached,
+OpenWrt /init and procd userspace startup have not started.
 
-Once the early shell is reached, first capture serial output and verify RAM
-root, the 16 MTD read-only flags, and every attached UBI read-only state. Do not
-probe writability with a write. Do not run `/sbin/init` until the early checks
-are accepted; that starts normal OpenWrt services and may initialize Wi-Fi.
+If U-Boot does not pass the temporary rdinit argument, the expected shell is
+not reached, /init or normal startup appears, or the console is ambiguous, STOP
+immediately. Do not run `exec /init`, /sbin/init, Wi-Fi tests or any
+continuation command. Do not remove existing console or safety parameters by
+guessing. This guard starts only after built-in kernel probes/initcalls, so it
+does not prevent switch GPIO activity or replace passive GPIO electrical
+verification. Kernel UBI attachment may also occur before userspace checks.
+setenv is volatile for the current boot; never run saveenv.
+
+Once the expected early shell is reached, capture serial output and verify RAM
+root, all 16 MTD read-only flags, and every attached UBI read-only state. Never
+probe writability with a write. Only after these checks pass and the owner
+approves normal startup, use `exec /init`. The actual initramfs /init mounts
+and copies the root, then switch_root starts /sbin/init (procd), which starts
+normal OpenWrt services and may initialize Wi-Fi.
 
 ## After approved normal startup only
 

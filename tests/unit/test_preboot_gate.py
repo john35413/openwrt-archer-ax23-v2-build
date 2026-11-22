@@ -33,8 +33,30 @@ class PrebootGate(unittest.TestCase):
         self.assertIn("6d85f2a82117008fc991ffdea54a7fc64a77f2616bdf02f5b9bcabd7a059a9ff", GATE)
         self.assertIn("config@mp02.1", GATE)
         self.assertIn("0x44000000", GATE)
-        self.assertIn("init=/bin/sh", CHECKLIST)
-        self.assertIn("never run `saveenv`", CHECKLIST)
+        self.assertIn("rdinit=/bin/sh", CHECKLIST)
+        self.assertNotRegex(CHECKLIST, r"(?m)^.*(?:Use|append|setenv).*init=/bin/sh")
+        self.assertNotIn("setenv bootargs " + "$" + "{bootargs} init=/bin/sh", GATE)
+        self.assertIn("never run saveenv", CHECKLIST)
+
+    def test_rdinit_guard_stop_rule_and_real_continuation_are_documented(self):
+        for document in (GATE, CHECKLIST, HARDWARE):
+            self.assertIn("rdinit=/bin/sh", document)
+        self.assertRegex(CHECKLIST, r"STOP\s+immediately")
+        self.assertIn("Do not run `exec /init`", CHECKLIST)
+        self.assertIn("built-in kernel probes/initcalls", CHECKLIST)
+        self.assertIn("does not prevent switch GPIO activity", CHECKLIST)
+        self.assertIn("exec /init", HARDWARE)
+        self.assertIn("switch_root", HARDWARE)
+        self.assertIn("procd", HARDWARE)
+
+    def test_bootloader_addresses_are_labeled_as_source_not_device_measurements(self):
+        self.assertIn("CONFIG_SYS_BOOTM_LEN", GATE)
+        self.assertIn("0x4000000", GATE)
+        self.assertIn("CONFIG_IPQ_NO_RELOC", GATE)
+        self.assertIn("0x4A920000", GATE)
+        self.assertIn("0x44000000", GATE)
+        self.assertIn("0x42676008", GATE)
+        self.assertIn("not measurements of", GATE)
 
     def test_eu_board_data_is_not_an_after_boot_rebuild_prerequisite(self):
         self.assertIn("image includes the intended EU board data already", GATE)
