@@ -17,7 +17,7 @@ Do not use this target profile on AX23 v1 or other regional/hardware revisions. 
 
 ## Current status
 
-The latest recorded local build used 27 project patches and produced an initramfs FIT image for `config@mp02.1`. Offline artifact validation recorded **77 PASS, 1 INFO, 0 FAIL**. The report explains the helper output lines that can make raw output counts appear higher. Latest local tests recorded **9 shell suites PASS, 1 SKIP**, **18 Python unit tests PASS**, and static checks PASS with **53 development-DTB checks**. The skipped extractor suite needs `ubireader_extract_images`; two EU ART-fixture subchecks were also skipped because private stock fixtures were not available in that test environment. See `reports/artifacts-dev.txt`, `reports/build-manifest.json`, and `reports/final-validation-and-ram-load-conclusions.md`.
+The latest recorded local build used 27 project patches and produced an initramfs FIT image for `config@mp02.1`. Offline artifact validation recorded **77 PASS, 1 INFO, 0 FAIL**. The report explains the helper output lines that can make raw output counts appear higher. Latest local tests recorded **12 shell unit suites PASS, 1 SKIP**, **31 Python unit tests PASS**, and static checks PASS with **53 development-DTB checks**. The skipped BDF extractor suite needs `ubireader_extract_images`; two EU ART-fixture subchecks were also skipped because private stock fixtures were not available. Static checks passed (53 DTB checks; no baseline DTB was available). See `reports/artifacts-dev.txt`, `reports/build-manifest.json`, and `reports/final-validation-and-ram-load-conclusions.md`.
 
 The build validated source, FIT structure, selected DTB policy, embedded firmware/modules and compiled changes. It does **not** establish physical boot, RF calibration acceptance, emitted RF power, Ethernet traffic, GPIO wiring, cold-boot stability, NAND runtime state or recovery behavior.
 
@@ -47,8 +47,8 @@ The diagnostics are streamed from a PC over SSH and are not embedded in the firm
 ### Reproducible build
 
 ```sh
-git clone https://github.com/john35413/openwrt-archer-ax23-build.git
-cd openwrt-archer-ax23-build
+git clone https://github.com/john35413/openwrt-archer-ax23-v2-build.git
+cd openwrt-archer-ax23-v2-build
 # Supply locally extracted EU board-data files as described by tools/bdf/.
 bash tools/build-dev.sh --variant dev --jobs 4
 ```

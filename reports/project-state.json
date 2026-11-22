@@ -1,6 +1,6 @@
 {
   "project": "AX23_V2_OPENWRT",
-  "repository": "https://github.com/john35413/openwrt-archer-ax23-build",
+  "repository": "https://github.com/john35413/openwrt-archer-ax23-v2-build",
   "branch": "dev",
   "source_state": {
     "firmware_code_revision_built": "8673c2e6a001fce6271d11700bfa1d27dc51edc9",
@@ -37,14 +37,15 @@
     "readonly_redaction_tests": "pass"
   },
   "tests": {
-    "shell_suites_pass": 9,
-    "shell_suites_skip": 1,
-    "python_unit_tests_pass": 18,
-    "static_checks": "pass; dev DTB 53/53",
-    "skips": [
-      "ubireader_extract_images dependency unavailable",
-      "EU ART count fixture subchecks unavailable"
-    ]
+    "shell_unit_suites_pass": 12,
+    "shell_unit_suites_skip": 1,
+    "python_unit_tests_pass": 31,
+    "static_checks": "pass; 53 development-DTB checks; baseline DTB skipped",
+    "additional_skips": [
+      "ubireader_extract_images unavailable",
+      "two EU ART fixture subchecks unavailable"
+    ],
+    "history_security_audit": "pass: no raw logs, suspicious binary paths, or checked credential/private-key markers reachable from main/dev; git fsck pass"
   },
   "hardware": {
     "router_accessed": false,
@@ -62,15 +63,16 @@
     ]
   },
   "reports": [
-    "reports/build-manifest.json",
-    "reports/final-codex-adversarial-audit.md",
-    "reports/CODEX_FINAL_HANDOVER.md",
-    "reports/first-ram-boot-checklist.md",
-    "reports/artifacts-dev.txt",
+    "CONTRIBUTING.md",
+    "LICENSES.md",
     "ORIGIN-PROVENANCE.md",
     "README.md",
-    "LICENSES.md",
-    "CONTRIBUTING.md"
+    "reports/CODEX_FINAL_HANDOVER.md",
+    "reports/artifacts-dev.txt",
+    "reports/build-manifest.json",
+    "reports/final-codex-adversarial-audit.md",
+    "reports/first-ram-boot-checklist.md",
+    "reports/standalone-migration-verification.md"
   ],
   "default_branch": "main",
   "migration": {
@@ -83,12 +85,36 @@
     "local_checkout": "/home/jfits/openwrt-archer-ax23-build",
     "cache_reuse": "build/, upstream/ and board-data/ are ignored local symlinks to the preserved original project; no large trees were copied",
     "local_artifact": "artifacts/ram-only/dev/openwrt-qualcommax-ipq50xx-tplink_archer-ax23-v2-initramfs-uImage.itb (local symlink to original artifact)",
-    "destination_repository": "https://github.com/john35413/openwrt-archer-ax23-build",
-    "status": "published; main is default, dev is active",
-    "public": true,
+    "destination_repository": "https://github.com/john35413/openwrt-archer-ax23-v2-build",
+    "status": "prepared for publication; remote refs verified after publication",
+    "public": false,
     "local_path_safety_fix": "clean-dev realpath containment preflight; focused symlink-cache regression passes; no firmware output change",
     "source_subtree_files": 158,
     "public_main_tracked_files": 162,
-    "current_dev_tracked_files": 163
+    "current_dev_tracked_files": 163,
+    "normalized_comparison": {
+      "source_subtree_files": 305,
+      "raw_log_files_intentionally_excluded": 147,
+      "source_nonlog_files": 158,
+      "standalone_files_before_verification_report": 163,
+      "identical_files": 152,
+      "intentional_modified_source_paths": [
+        ".gitignore",
+        "README.md",
+        "reports/CODEX_FINAL_HANDOVER.md",
+        "reports/project-state.json",
+        "tools/clean-dev.sh",
+        "tools/test-dev.sh"
+      ],
+      "missing_source_files": 0,
+      "destination_only_additions": [
+        "CONTRIBUTING.md",
+        "LICENSES.md",
+        "ORIGIN-PROVENANCE.md",
+        "licenses/GPL-2.0.txt",
+        "tests/unit/test_clean_symlink_guard.sh"
+      ],
+      "numbered_patch_sha256_mismatches": 0
+    }
   }
 }

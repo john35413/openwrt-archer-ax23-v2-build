@@ -1,14 +1,14 @@
 # Codex final handover
 
-**State:** Standalone-repository migration complete. The public repository is live; `main` is the baseline and `dev` is the active development branch. The local build and offline validation are complete; physical use remains conditional. No router operation occurred.
+**State:** Local source verification is complete; first publication to `john35413/openwrt-archer-ax23-v2-build` is pending. When created, `main` will be the baseline and `dev` the development branch. Confirm actual GitHub refs after push. The local build and offline validation are complete; physical use remains conditional. No router operation occurred.
 
 ## Revisions
 
 - Starting Claude checkpoint: `9576d3ea680aabcf9a14eb905c97ad99a7d430b8`.
 - Latest imported legacy branch commit: `6847cff6fc5a7bea141c42ccde19d0c4f9f972f4`; it adds `reports/final-validation-and-ram-load-conclusions.md`.
-- Standalone repository: `https://github.com/john35413/openwrt-archer-ax23-build` (public); default branch `main`; active development branch `dev`.
+- Standalone repository: `https://github.com/john35413/openwrt-archer-ax23-v2-build` (public); default branch `main`; active development branch `dev`.
 - Standalone local path: `/home/jfits/openwrt-archer-ax23-build`.
-- File counts: 158 files in the imported AX23 subtree, 162 tracked on public main after four migration documents, and 163 on current dev after the cache-safety regression test.
+- File comparison: 305 source subtree paths, 147 raw-log exclusions, 158 non-log source paths; at the pre-publication checkpoint 152 files are blob-identical, six source files are intentionally adapted, five standalone-only files were added, and none are missing. See `reports/standalone-migration-verification.md`.
 - Previous Codex firmware-source checkpoint: `8673c2e6a001fce6271d11700bfa1d27dc51edc9`.
 - Current host-test correction checkpoint: `bd2326a5002eca746ce3edcdff5b7cb2913188ae` (`tests: decode dtc string-list encoded radio address cells`).
 - Prepared OpenWrt tree: `d0e975060d5c71565e0a62abbddf48ef1312478c`; all 27 ordered patches applied. 0026 is inner commit `4f8bf04`; 0027 is `d0e9750`.
@@ -21,7 +21,7 @@ Local-only image: `/home/jfits/DuinoCoinUSB_ESP8266/AX23_V2_OPENWRT/artifacts/ra
 
 Artifact validator: 77 PASS, 1 INFO, 0 FAIL. It confirms 16 read-only DT partitions, target/FIT, EU board data, embedded modules/startup hooks and the compiled 0026/0027 objects. `qcom_q6v5_mpd.o` contains `q6_wcss_recover_userpds`; patched backports `ath11k/dp.o` compiled with exact allocation sizes.
 
-Tests: nine shell suites PASS, one SKIP (`ubireader_extract_images` unavailable); 18 Python unit tests PASS; static runner PASS, dev DTB 53 checks PASS. Two EU fixture subchecks in the calibration-region suite are SKIP. Mock recovery tests are not proof of kernel concurrency or hardware behavior.
+Latest local rerun: 12 shell unit suites PASS, one SKIP (`ubireader_extract_images` unavailable); 31 Python unit tests PASS; two EU ART fixture subchecks SKIP; static runner PASS (53 development-DTB checks, baseline DTB SKIP). These are offline tests, not hardware tests. Two EU fixture subchecks in the calibration-region suite are SKIP. Mock recovery tests are not proof of kernel concurrency or hardware behavior.
 
 ## Findings and changes
 
@@ -35,4 +35,4 @@ Tests: nine shell suites PASS, one SKIP (`ubireader_extract_images` unavailable)
 
 **CONDITIONAL GO for RAM boot only after** confirming exact EU v2.0 hardware, measured UART voltage/pins, stock recovery availability, bootloader RAM/FIT/signature acceptance without bypass, and passive GPIO 26/39 wiring/polarity. Otherwise stop. No persistent image is authorized; never `saveenv`, flash or run sysupgrade.
 
-The artifact exists only on the Windows PC's WSL filesystem. Claude can access the pushed source, this handover, reports and manifests through GitHub, but cannot access that local image or private local EU board data. Recompute the image hash locally before any later use. See `reports/build-manifest.json`, `reports/final-codex-adversarial-audit.md`, `reports/first-ram-boot-checklist.md` and root `ORIGIN-PROVENANCE.md`. The prepared `build/`, upstream source trees and private `board-data/` are local symlinks to the original project; they were not copied or published.
+Source comparison used original branch `6847cff6fc5a7bea141c42ccde19d0c4f9f972f4`; it has no commits newer than the known Claude checkpoint. See `reports/standalone-migration-verification.md` for the normalized tree counts and history audit. The artifact exists only on the Windows PC's WSL filesystem. Claude can access published source, handover, reports and manifests through GitHub, but cannot access that local image or private EU board data. Recompute the image hash locally before any later use. See `reports/build-manifest.json`, `reports/final-codex-adversarial-audit.md`, `reports/first-ram-boot-checklist.md` and root `ORIGIN-PROVENANCE.md`. The prepared `build/`, upstream source trees and private `board-data/` are local symlinks to the original project; they were not copied or published.
