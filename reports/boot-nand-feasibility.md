@@ -1,3 +1,5 @@
+> **Safety/status update (2026-11-22):** This is a historical source investigation, not an operator authorization. Do not press Reset/WPS, enter recovery mode, upload a file, change router settings, or power-cycle the AX23 based on this report alone. The current operator gate is `FINAL_PREBOOT_GATE.md`; the UART-free conclusion and current exact-unit blockers are in `ETHERNET_UART_FREE_FINAL_ASSESSMENT.md`. Any physical test needs the owner's explicit approval for that exact action. Do not use the Raspberry Pi for TFTP; prefer a separately approved, isolated Windows host setup.
+
 # Boot, NAND and recovery feasibility: Archer AX23(EU) v2.0
 
 Updates `nand-boot-safety.md` with TP-Link's **own U-Boot source** (GPL_AX23v2.tar.gz,
