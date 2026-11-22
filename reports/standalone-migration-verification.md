@@ -23,7 +23,7 @@ Compared every tracked file in `AX23_V2_OPENWRT/` at the fetched source SHA with
 - Identical source files: **152**
 - Source paths intentionally modified: **6** — `.gitignore` (private/generated exclusions), `README.md` (standalone docs/URL), `reports/CODEX_FINAL_HANDOVER.md` and `reports/project-state.json` (migration records), `tools/clean-dev.sh` (symlink containment safety), `tools/test-dev.sh` (runs the guard regression).
 - Source paths missing: **0**
-- Standalone-only additions: **5** — contribution/license/provenance documents, GPL license text, and the cleanup symlink regression test.
+- Standalone-only additions: **6** — contribution/license/provenance documents, GPL license text, cleanup symlink regression test, and this verification report.
 - New Claude changes since the last known checkpoint: **0 commits**. The complete latest source subtree is represented; no legitimate source, diagnostic, report, or research file was omitted.
 - Latest diagnostic/research files: present in the normalized comparison; all source non-log paths accounted for.
 

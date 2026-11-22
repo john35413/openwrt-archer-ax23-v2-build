@@ -112,9 +112,13 @@
         "LICENSES.md",
         "ORIGIN-PROVENANCE.md",
         "licenses/GPL-2.0.txt",
+        "reports/standalone-migration-verification.md",
         "tests/unit/test_clean_symlink_guard.sh"
       ],
-      "numbered_patch_sha256_mismatches": 0
+      "numbered_patch_sha256_mismatches": 0,
+      "destination_only_addition_count": 6,
+      "patch_sha256_mismatches": 0,
+      "final_published_file_count": 164
     },
     "initial_local_publication_candidate": "130ac92bd9c8faa3d47ccb2c618b5c7fed22c8e0",
     "published_source_checkpoint_sha": "308d692e4921bc061f3a3cabcc35b6b769405b37",

@@ -8,7 +8,7 @@
 - Latest imported legacy branch commit: `6847cff6fc5a7bea141c42ccde19d0c4f9f972f4`; it adds `reports/final-validation-and-ram-load-conclusions.md`.
 - Standalone repository: `https://github.com/john35413/openwrt-archer-ax23-v2-build` (public); default branch `main`; active development branch `dev`. Latest original source SHA compared: `6847cff6fc5a7bea141c42ccde19d0c4f9f972f4`; no newer Claude commit existed.
 - Standalone local path: `/home/jfits/openwrt-archer-ax23-build`.
-- File comparison: 305 source paths, 147 raw-log exclusions, 158 non-log paths; 152 identical, six intentionally adapted, five standalone additions, none missing. Initial published source checkpoint: `308d692e4921bc061f3a3cabcc35b6b769405b37`. See `reports/standalone-migration-verification.md`.
+- File comparison: 305 source paths, 147 raw-log exclusions, 158 non-log paths; 152 identical, six intentionally adapted, six standalone additions (including the verification report), none missing. Initial published source checkpoint: `308d692e4921bc061f3a3cabcc35b6b769405b37`. All 27 patch SHA256 comparisons match. See `reports/standalone-migration-verification.md`.
 - Previous Codex firmware-source checkpoint: `8673c2e6a001fce6271d11700bfa1d27dc51edc9`.
 - Current host-test correction checkpoint: `bd2326a5002eca746ce3edcdff5b7cb2913188ae` (`tests: decode dtc string-list encoded radio address cells`).
 - Prepared OpenWrt tree: `d0e975060d5c71565e0a62abbddf48ef1312478c`; all 27 ordered patches applied. 0026 is inner commit `4f8bf04`; 0027 is `d0e9750`.
