@@ -1,4 +1,4 @@
-# Artifact validation (dev) 2026-11-22T07:48:37Z
+# Artifact validation (dev) 2026-11-22T09:40:20Z
 PASS initramfs FIT present: openwrt-qualcommax-ipq50xx-tplink_archer-ax23-v2-initramfs-uImage.itb (13330704 bytes)
 PASS FIT hashes, default config, kernel addresses and decompressed extent
 PASS dtb: model
@@ -21,22 +21,22 @@ PASS dtb: partition rootfs_1 offset/size got ('0x3bc0000', '0x3580000') want ('0
 PASS dtb: partition tp_data offset/size got ('0x7140000', '0x840000') want ('0x7140000', '0x840000')
 PASS dtb: partition radio offset/size got ('0x7980000', '0x440000') want ('0x7980000', '0x440000')
 PASS dtb: partition data offset/size got ('0x7dc0000', '0x80000') want ('0x7dc0000', '0x80000')
-PASS dtb: partition 0:BOOTCONFIG read-only
-PASS dtb: partition 0:APPSBL read-only
-PASS dtb: partition rootfs read-only
-PASS dtb: partition 0:BOOTCONFIG1 read-only
-PASS dtb: partition 0:ART read-only
-PASS dtb: partition 0:TRAINING read-only
-PASS dtb: partition 0:SBL1 read-only
-PASS dtb: partition data read-only
-PASS dtb: partition 0:CDT read-only
-PASS dtb: partition tp_data read-only
-PASS dtb: partition radio read-only
 PASS dtb: partition 0:DEVCFG read-only
-PASS dtb: partition 0:QSEE read-only
-PASS dtb: partition 0:APPSBLENV read-only
+PASS dtb: partition rootfs read-only
+PASS dtb: partition 0:SBL1 read-only
+PASS dtb: partition 0:TRAINING read-only
+PASS dtb: partition data read-only
 PASS dtb: partition rootfs_1 read-only
 PASS dtb: partition 0:MIBIB read-only
+PASS dtb: partition tp_data read-only
+PASS dtb: partition 0:ART read-only
+PASS dtb: partition 0:APPSBLENV read-only
+PASS dtb: partition radio read-only
+PASS dtb: partition 0:BOOTCONFIG read-only
+PASS dtb: partition 0:BOOTCONFIG1 read-only
+PASS dtb: partition 0:APPSBL read-only
+PASS dtb: partition 0:QSEE read-only
+PASS dtb: partition 0:CDT read-only
 PASS dtb: no partition overlap
 PASS dtb: partitions within 128 MiB 0x7e40000
 PASS dtb: erase-block aligned

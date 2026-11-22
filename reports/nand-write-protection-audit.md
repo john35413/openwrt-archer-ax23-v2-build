@@ -24,6 +24,14 @@ root filesystem). The lab results are **SIM**. Nothing was run on a router.
 | 11 | SPI-NAND driver probe (`spinand_*`) | chip feature registers | writes only volatile configuration (ECC enable, quad mode), not the array; never OTP lock | SRC |
 | 12 | `ubi.mtd=` from U-Boot `bootargs` on a manual `bootm` | attaches a slot | read-only (row 6); 3P RAM-boot command lines carry no `ubi.mtd` | SRC + HW-3P cmdline |
 
+The AX23 DTS also appends `root=/dev/ubiblock0_1 coherent_pool=2M`; the exact
+U-Boot environment and final command line on our unit are unverified. Do not
+assume third-party bootargs. The first-boot procedure records `printenv
+bootargs` and temporarily appends `init=/bin/sh` to stop normal OpenWrt init
+before userspace services and Wi-Fi startup. This does not disable kernel MTD
+or UBI discovery/attachment, and it is not a substitute for checking runtime
+read-only flags. Never use `saveenv`.
+
 ## 2. Can UBI auto-attach be disabled entirely?
 Yes, but it is not needed. The generic auto-attach (pending 490) has no command-line
 switch and only skips when `ubi.mtd=` is given. Disabling it would need a kernel patch

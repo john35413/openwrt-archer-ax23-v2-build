@@ -33,8 +33,17 @@ which is a label, not a consumer. PCB continuity remains **UNV**.
   (1 s wait for family D, 0025) and programs it from scratch. HW-3P's working 2.5 G
   trunk therefore already comes from a chip initialised from reset by Linux, not from
   U-Boot's configuration.
-- Our `reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>` drives a line the vendor never uses
-  for this switch. Per the OEM evidence it is a no-op for the switch.
+- Our current DTS declares `reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>` on the
+  RTL8367S-VB node. This is **not proven to be a no-op**. The compiled Linux
+  `rtl83xx_probe()` requests that descriptor with `GPIOD_OUT_LOW`; the common
+  Realtek driver then asserts reset, sleeps 25 ms, deasserts it, sleeps 100 ms,
+  and keeps the device-managed GPIO request for the lifetime of the device.
+  With `GPIO_ACTIVE_LOW`, logical asserted means physical low and deasserted
+  means physical high. OEM evidence establishes GPIO 26 as the vendor reset
+  line, but does not establish that GPIO 39 is unconnected or electrically
+  harmless on this PCB. The current image can actively drive GPIO 39 during
+  Linux device probe; passive board measurement is therefore a hard pre-boot
+  gate, not an after-boot diagnostic.
 - **Moving the DTS to GPIO 26 is not adopted yet.** It gives no cold-boot gain (U-Boot
   already pulses 26 on every boot), and `rtl83xx_probe()` would assert it for only
   25 ms and read the chip ID 100 ms after release. Stock waits 200 ms (kernel) or
@@ -63,14 +72,18 @@ point the same way. Kept unchanged.
 
 ## 5. The physical measurement that closes it
 Passive and read-only, in this order:
-1. **UART, stock cold boot (Stage 0/1 wiring, 1.8 V-safe):** capture U-Boot's
+1. **UART, stock cold boot (Stage 0/1 wiring, logic-level verified):** capture U-Boot's
    `rtk_switch_init ret = …` / `Set RTL8367S SGMII 2.5Gbps` lines. That confirms the
    shipped U-Boot runs §1's code.
-2. **Unpowered continuity:** RTL8367S-VB `nRESET` to the IPQ5018 GPIO 26 net (and to 39).
-   Alternatively, observe `nRESET` with a high-impedance probe through one stock cold
-   boot: expect two low pulses (500 ms U-Boot, 200 ms kernel). Never drive either line.
-3. **First RAM boot:** `ax23-selfdiag.sh` **S2.8** (new) records how GPIO 26 and 39 are
-   claimed and muxed, plus S2.1/S2.2/S2.4/S2.5.
+2. **Before any RAM boot, unpowered continuity:** map RTL8367S-VB `nRESET` to
+   GPIO 26 and GPIO 39 using a board-ground-referenced, high-impedance method.
+   Alternatively, passively observe both nets during a stock boot with a
+   high-impedance probe. Never drive either line. If GPIO 39 is connected to
+   `nRESET`, another reset, or an unknown circuit, stop: this image drives it.
+   A post-boot S2.8 readout is corroborating evidence only; it cannot establish
+   safety before the GPIO has already been driven.
+3. **After a separately approved RAM boot only:** `ax23-selfdiag.sh` S2.8 records
+   the kernel's GPIO ownership/mux state alongside S2.1/S2.2/S2.4/S2.5.
 4. **Only if (2) confirms 26:** a one-variable variant image with
    `reset-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>` on the switch node, a pinctrl state
    `gpio26: function "gpio", bias-pull-up`, and a reset assert ≥ 200 ms / release-to-access

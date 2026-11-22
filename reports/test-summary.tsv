@@ -1,4 +1,3 @@
-static	PASS	logs/test-static.log
 unit-python	PASS	logs/test-unit-python.log
 unit-ath11k-rings	PASS	logs/test-unit-ath11k-rings.log
 unit-caldata	PASS	logs/test-unit-caldata.log
@@ -11,3 +10,6 @@ unit-ath11k-ring-alloc	PASS	logs/test-unit-ath11k-ring-alloc.log
 unit-trunk-variant	PASS	logs/test-unit-trunk-variant.log
 unit-selfdiag-boardid	PASS	logs/test-unit-selfdiag-boardid.log
 unit-selfdiag-calregions	PASS	logs/test-unit-selfdiag-calregions.log
+unit-clean-symlink-guard	PASS	logs/test-unit-clean-symlink-guard.log
+preboot-docs	PASS	logs/test-preboot-docs.log
+static	PASS	/tmp/ax23-preboot-static.log

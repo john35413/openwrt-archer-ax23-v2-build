@@ -1,81 +1,113 @@
-# Hardware acceptance plan: Archer AX23(EU) v2.0 (RAM boot only)
+# Hardware acceptance plan: Archer AX23 EU v2.0 (RAM boot only)
 
-Nothing here writes to flash. Every step boots OpenWrt from RAM via TFTP;
-power-cycling the router returns it to the stock firmware on NAND.
+**Status: BLOCKED pending the physical and U-Boot gates.** This plan does not
+authorize a boot by itself. Complete [`FINAL_PREBOOT_GATE.md`](../../reports/FINAL_PREBOOT_GATE.md)
+in order. A failed or unknown prerequisite means STOP before `bootm`.
 
-Record every result as **PASS / FAIL / BLOCKED / NOT TESTED** with the raw log
-attached. A test that could not run is BLOCKED, never PASS.
+The firmware is an experimental RAM-only development image. Do not use the
+stock web firmware updater, do not flash, and do not attempt persistent install.
+No physical AX23 validation has been performed. Do not press Reset/WPS during
+initial safety checks. Never run `saveenv`, flash/erase/UBI write commands, or
+signature bypasses.
 
-## 0. Prerequisites
+## 0. Prerequisites and safety gates
 
-| Item | Notes |
+| Gate | Required evidence before proceeding |
 |---|---|
-| USB-UART adapter **with 1.8 V logic** | The AX23 v2 UART is 1.8 V (GPIO28 RX / GPIO29 TX, header JP1, 115200 8N1). A plain 3.3 V adapter can damage the SoC. Use an adapter with selectable 1.8 V I/O, or a 3.3 V adapter through a bidirectional level shifter (e.g. TXS0108E/BSS138 module, LV side at the board's 1.8 V). The SMD level-shifter pads on the PCB are unpopulated; testers bridged them or wired an off-board shifter (forum t/254876). |
-| TFTP server on the PC or Pi | Pi: `dnsmasq --port=0 --enable-tftp --tftp-root=/srv/tftp`. Windows: Tftpd64. PC address 192.168.1.10/24. |
-| Image | `artifacts/ram-only/dev/openwrt-qualcommax-ipq50xx-tplink_archer-ax23-v2-initramfs-uImage.itb`. Check `sha256sum -c SHA256SUMS` first. |
-| Cables | PC ↔ router LAN1; upstream modem ↔ WAN for routing tests. |
+| Exact unit | Chassis and PCB labels identify Archer AX23 EU V2.0. Stop on a revision/region mismatch. |
+| Stock recovery | Owner confirms ordinary stock boot/recovery remains available without uploading, resetting, or writing anything. Verify normal stock boot before any RAM test; do not press buttons for this check. |
+| UART | JP1 pin identities and voltage measured on this unit. GPIO28/GPIO29 and 1.8 V claims are unverified references, not wiring instructions. Begin receive-only, common GND + router TX to adapter RX only. |
+| GPIO | Passively establish GPIO26/39 and RTL8367S-VB `nRESET` relationship before Linux is allowed to probe. Current DTS makes the kernel drive GPIO39; see `reports/rtl8367-reset-trace.md`. Unknown connection or waveform = STOP. |
+| Bootloader | Observe exact U-Boot version, `help`, `printenv`, `bdinfo`, boot delay, bootargs, DRAM map, FIT/hash policy and load/relocation behavior. Unknown or inadequate memory map = STOP. No signature bypass. |
+| Image | Independently recompute the staged ITB size/hash and verify local FIT metadata as documented in `reports/FINAL_PREBOOT_GATE.md`. The intended config is the FIT default `config@mp02.1`. |
+| TFTP | Use a Windows-native TFTP server bound only to a dedicated physical Ethernet interface on an isolated direct link, or an explicitly reviewed equivalent. WSL2 default NAT is not assumed reachable. Do not change firewall, interface, or router network configuration without owner approval. |
 
-## 1. RAM boot (repeatable)
+`setenv` changes only the current volatile U-Boot environment unless `saveenv`
+is issued. `saveenv` is prohibited. Use the temporary `init=/bin/sh` first
+kernel boot gate in `reports/first-ram-boot-checklist.md`; do not start normal
+OpenWrt userspace/Wi-Fi until the early shell checks pass.
 
-```
-(power on, press a key at "Hit any key to stop autoboot")
-IPQ5018# setenv serverip 192.168.1.10
-IPQ5018# setenv ipaddr 192.168.1.1
-IPQ5018# tftpboot 0x44000000 openwrt-qualcommax-ipq50xx-tplink_archer-ax23-v2-initramfs-uImage.itb
-IPQ5018# bootm 0x44000000
-```
-Do **not** run `saveenv`. Do not run any `nand`/`sf`/`mtd`/`ubi write`/`erase` commands.
-Capture the full UART log to `logs/hw/<date>-boot-N.txt`.
+The current image already includes verified EU radio board data. Do not extract
+board data from the router or rebuild after this RAM boot. Factory ART
+calibration is a distinct read-only runtime input and remains unverified on the
+physical unit.
 
-## 2. Before anything else: read-only backup
+## 1. Staged RAM boot (only after every gate passes)
 
-From the PC: `tests/hardware/backup-flash-ro.sh 192.168.1.1 ~/ax23-backup` → every MTD
-partition read via `/dev/mtdNro`, with sha256 verified on both sides. Keep it offline. It
-contains your MAC, Wi-Fi PIN, calibration and stock firmware, and it feeds `tools/bdf/extract-oem-bdf.sh`.
+1. Keep the router isolated from household/WAN networks; connect the PC's
+   selected dedicated Ethernet interface to the chosen router LAN port.
+2. At the observed U-Boot prompt, record `version`, `printenv`, `bdinfo`,
+   `help bootm`, and the actual FIT verification policy. Confirm the actual
+   DRAM map safely contains the proposed transfer region and the kernel / all
+   bootm relocation regions. Stop if the bootloader's memory use overlaps.
+3. Verify existing `bootargs`. Append `init=/bin/sh` using temporary `setenv`
+   syntax confirmed for this prompt, then `printenv bootargs` to verify. Keep
+   all existing console tokens; do not guess or delete tokens. If this cannot
+   be safely constructed, STOP before transfer.
+4. Set temporary `serverip` and `ipaddr` only for the isolated network. Run
+   `tftpboot 0x44000000 openwrt-qualcommax-ipq50xx-tplink_archer-ax23-v2-initramfs-uImage.itb`.
+   Verify successful transfer and the reported byte count is exactly
+   13,330,704. Do not assume the sample IPs in older notes are safe for this LAN.
+5. `bootm 0x44000000` selects the FIT's verified default `config@mp02.1`.
+   Proceed only if the actual bootloader accepts the image/hash without bypass.
+   Do not add `#config@mp02.1` syntax unless that exact U-Boot supports it.
+6. Capture complete UART output to a private local file. Expect the early shell,
+   not normal OpenWrt startup. Check RAM root, all 16 MTD partitions
+   `writeable=no`, and all attached UBI devices read-only. Do not attempt a test
+   write. If unexpected storage or GPIO activity appears, remain at the shell,
+   do not run `/sbin/init`, and collect the UART evidence. Do not issue flash
+   commands. If the shell is absent or normal services start unexpectedly,
+   STOP; do not continue with Wi-Fi tests.
+7. Only after the early checks pass, an owner may approve `exec /sbin/init` to
+   start normal OpenWrt services. Confirm Linux networking and SSH access before
+   any streamed diagnostics. The PC must stream `tests/hardware/ax23-selfdiag.sh`
+   from this source checkout; diagnostics are not embedded in the firmware.
 
-## 3. Acceptance tests
+At any pre-`bootm` failure, stop at the U-Boot prompt without changing persistent
+state. After kernel start, do not issue further boot commands or storage writes;
+preserve the log. Do not power-cycle while any flash activity is observed.
+After activity has ceased, stock recovery behavior is still a physical
+observation, not an assumption.
 
-| # | Test | How | Pass criterion |
-|---|---|---|---|
-| HW-01 | Linux boot | UART log | reaches shell; no panic/oops |
-| HW-02 | State snapshot | `ssh root@192.168.1.1 sh -s < tests/hardware/router-collect.sh > hw.tsv` | H01-H24 as listed in the script |
-| HW-03 | Switch + 2.5G trunk | H04/H05 + `ethtool -S eth0` | RTL8367S-VB probed; `2.5Gbps/Full`; no climbing FCS errors |
-| HW-04 | LAN ports 1-4 | plug the PC into each port in turn; `ip -s link show lanN` | link + DHCP on each |
-| HW-05 | Client-to-client switching | two PCs/Pi on LAN; `pc-traffic-tests.sh --mode lan-lan` | >900 Mbit/s TCP, no loss |
-| HW-06 | WAN | upstream modem; `ifstatus wan` | DHCP lease, ping 1.1.1.1 |
-| HW-07 | DHCP/DNS/NAT/TCP/UDP | LAN client: lease, `nslookup`, browse; `pc-traffic-tests.sh --mode lan-wan --server <host on WAN side>` | all succeed; record Mbit/s |
-| HW-08 | Load + latency | HW-07 output L1/L2 | no loss; record RTT under load |
-| HW-09 | Trunk gap detector (777-08 risk) | `pc-traffic-tests.sh --mode trunk-gaps --server <WAN-side host>` (10 min) | G1 PASS (no ~10 s periodic bursts) |
-| HW-10 | IPv6 | if the ISP provides it: `ifstatus wan6`, client `ping -6` | global address + reachability |
-| HW-11 | PPPoE | only if your ISP uses it | session up |
-| HW-12 | Wi-Fi board data | after §4 | H11 PASS (2 phys) |
-| HW-13 | 2.4 / 5 GHz AP | `uci set wireless.radioN.country=<EU cc>`; enable; `iw dev`, `iw phy` | both APs beacon; correct channels/power for your country |
-| HW-14 | WPA2 / WPA3 | `encryption psk2` then `sae` / `sae-mixed` | client associates on both bands |
-| HW-15 | Wi-Fi DHCP, Internet, Wi-Fi↔LAN | client on each band | lease; browse; iperf3 to a wired host |
-| HW-16 | Wi-Fi throughput | `pc-traffic-tests.sh --mode wifi` from the Wi-Fi client | record Mbit/s per band |
-| HW-17 | Reconnect stability | toggle client Wi-Fi 50×; `logread \| grep -c ath11k` | no driver errors |
-| HW-18 | LEDs | observe; H22; `iw phy` band mapping (H14) | LEDs follow phy0=2.4G / phy1=5G |
-| HW-19 | Buttons | `cat /sys/kernel/debug/gpio` while pressing reset / WPS | reset = gpio14 low when pressed; record any WPS GPIO |
-| HW-20 | MAC addresses | H08/H09; compare to label | match |
-| HW-21 | Watchdog / thermal | H20/H21 | present; temperatures plausible |
-| HW-22 | VLAN isolation | apply `configs/uci/10-guest-iot-networks.uci` (+20 for wired) | as in simulation N14-N22 |
-| HW-23 | Memory | H17/H18 idle, then during HW-16 | MemAvailable > 50 MiB; no OOM |
-| HW-24 | 24 h soak | `ssh … sh -s < soak-monitor.sh \| tee soak.csv` + continuous iperf/ping | no crash/OOM; MemAvailable flat (no leak) |
-| HW-25 | 48 h soak | as HW-24 | as HW-24 |
-| HW-26 | Repeated reboots | 20 cycles: 10 power cycles + 10 `reboot` (each followed by a new TFTP boot) | trunk up and LAN→WAN works every time |
-| HW-27 | Recovery | power-cycle after a RAM boot | stock firmware boots normally (the NAND was untouched) |
-| HW-28 | Recovery after interrupted service | pull WAN for 5 min during HW-24 | traffic resumes; no manual action |
+## 2. Acceptance tests (after the gated early shell and owner-approved startup)
 
-## 4. Wi-Fi board data (required before HW-12 to HW-17)
+Record each result **PASS / FAIL / BLOCKED / NOT TESTED** with time-stamped
+evidence. A command that did not run is not a PASS. Verify network access and
+SSH before every remote command. Keep raw logs private; redact identifiers and
+keys before sharing.
 
-```
-tools/bdf/extract-oem-bdf.sh ~/ax23-backup/mtd11_rootfs.bin            # lists candidates
-tools/bdf/extract-oem-bdf.sh ~/ax23-backup/mtd11_rootfs.bin --region <EU dir>
-./tools/build-dev.sh --variant dev --resume
-```
-If `mtd11` does not hold TP-Link firmware, try `mtd12_rootfs_1.bin`.
+| # | Test | Pass evidence |
+|---|---|---|
+| HW-01 | Linux boot | UART reaches early shell then, only after approval, normal init; no panic/oops. |
+| HW-02 | State snapshot | Read-only self-diagnostic and router snapshot after IP connectivity and SSH are confirmed. |
+| HW-03 | Switch and trunk | RTL8367S-VB probe; 2.5 Gbps full duplex; fresh bidirectional frames and counters, not carrier alone. |
+| HW-04 | LAN 1–4 | Link and DHCP on each port; no reset/WPS button use. |
+| HW-05 | LAN switching | Two clients; record TCP throughput and loss. |
+| HW-06 | WAN | Verified WAN connection; DHCP and controlled reachability. |
+| HW-07 | DHCP/DNS/NAT | Lease, DNS and routed traffic, with firewall enabled. |
+| HW-08 | Load/latency | RTT and loss before/during traffic. |
+| HW-09 | Trunk gap | Ten-minute fresh traffic/counter run; no unexplained periodic drops. |
+| HW-10 | IPv6 | Only if ISP provides it; global address and reachability. |
+| HW-11 | PPPoE | Only if the ISP uses PPPoE. |
+| HW-12 | Radios/BDF | Two PHYs, expected EU identities, firmware/BDF acceptance and regulatory state. Image already has the EU board data. |
+| HW-13 | AP and channels | Correct EU country set by supported OpenWrt configuration; expected channels and beacons. |
+| HW-14 | WPA2/WPA3 | Association and traffic on both bands. |
+| HW-15 | Wi-Fi networking | DHCP, DNS, Internet/LAN traffic on each radio. |
+| HW-16 | Wi-Fi performance | Record throughput; no performance claim without measurements. |
+| HW-17 | Reconnect stability | Reconnect test after initial stability; no ath11k errors/recovery loops. |
+| HW-18 | LEDs | Observe PHY-to-LED mapping; do not infer radio identity from LEDs alone. |
+| HW-19 | Buttons | **Deferred**; do not press Reset/WPS during initial acceptance. Later test only with recovery procedure and explicit owner approval. |
+| HW-20 | MAC addresses | Compare reported interfaces with label; keep identifiers private. |
+| HW-21 | Watchdog/thermal | Record readings and plausibility; no overheating. |
+| HW-22 | VLAN isolation | Apply guest/IoT test config only after baseline; verify isolation and firewall. |
+| HW-23 | Memory | Record `MemAvailable`, buddyinfo and OOM logs at idle and load. |
+| HW-24/25 | Soak | 24/48-hour stability only after earlier gates pass; monitor traffic, memory and errors. |
+| HW-26 | Reboot stability | Repeated controlled boots only after first boot/recovery pass. Never persist environment changes. |
+| HW-27 | Stock recovery | Confirm normal stock boot after RAM test; do not infer from no-write source analysis alone. |
+| HW-28 | WAN interruption | Controlled WAN reconnect observation after stable baseline. |
 
-## 5. Reporting
+## 3. Reporting
 
-Fill `reports/final-validation.md` with the TSV/CSV/UART logs. Keep raw logs, but redact MAC
-addresses and Wi-Fi keys before posting publicly.
+Use `reports/final-validation.md` for measured results. Preserve logs locally;
+do not publish raw UART, calibration or device-identifying data. No physical
+test is claimed by the source, build, FIT validation or simulations.

@@ -17,7 +17,7 @@ Do not use this target profile on AX23 v1 or other regional/hardware revisions. 
 
 ## Current status
 
-The latest recorded local build used 27 project patches and produced an initramfs FIT image for `config@mp02.1`. Offline artifact validation recorded **77 PASS, 1 INFO, 0 FAIL**. The report explains the helper output lines that can make raw output counts appear higher. Latest local tests recorded **12 shell unit suites PASS, 1 SKIP**, **31 Python unit tests PASS**, and static checks PASS with **53 development-DTB checks**. The skipped BDF extractor suite needs `ubireader_extract_images`; two EU ART-fixture subchecks were also skipped because private stock fixtures were not available. Static checks passed (53 DTB checks; no baseline DTB was available). See `reports/artifacts-dev.txt`, `reports/build-manifest.json`, and `reports/final-validation-and-ram-load-conclusions.md`.
+The latest recorded local build used 27 project patches and produced an initramfs FIT image for `config@mp02.1`. Offline artifact validation recorded **77 PASS, 1 INFO, 0 FAIL**. The report explains the helper output lines that can make raw output counts appear higher. The latest pre-hardware host run recorded **14 unit suites PASS** (including 36 Python cases); two private EU ART-fixture comparisons remain **SKIP**. The BDF extraction test passed using the existing local `build/bdf-venv`; no dependencies were installed. Static checks passed with **53 development-DTB checks**; comparison against a baseline DTB remains **SKIP** because no baseline image was built. A temporary WSL-loopback TFTP GET passed against the staged image; Windows Tftpd64 interface binding and U-Boot reachability remain untested. See `reports/artifacts-dev.txt`, `reports/test-summary.tsv`, `reports/build-manifest.json`, and `reports/FINAL_PREBOOT_GATE.md`.
 
 The build validated source, FIT structure, selected DTB policy, embedded firmware/modules and compiled changes. It does **not** establish physical boot, RF calibration acceptance, emitted RF power, Ethernet traffic, GPIO wiring, cold-boot stability, NAND runtime state or recovery behavior.
 
@@ -80,7 +80,7 @@ Individual unit suites live in `tests/unit/`. Some suites require optional tools
 
 Before any RAM boot, confirm the exact EU V2.0 board, measured UART voltage and pins, a stock recovery path, bootloader RAM/FIT behavior and passive GPIO 26/39 reset mapping/polarity. The FIT has hashes but no signature node; never bypass a bootloader signature policy. Stop if the exact bootloader rejects it or requires a bypass.
 
-No physical AX23 test has yet verified radio/BDF acceptance, live MTD/UBI flags, GPIO reset wiring, 2.5 G frame transfer, cold-boot stability, measured RF output or Q6 recovery under real memory pressure. See `reports/first-ram-boot-checklist.md` and `tests/hardware/HARDWARE-TEST-PLAN.md`. No persistent installation procedure is supported.
+No physical AX23 test has yet verified radio/BDF acceptance, live MTD/UBI flags, GPIO reset wiring, 2.5 G frame transfer, cold-boot stability, measured RF output or Q6 recovery under real memory pressure. The first-boot verdict and ordered safety gates are in `reports/FINAL_PREBOOT_GATE.md`; also see `reports/first-ram-boot-checklist.md` and `tests/hardware/HARDWARE-TEST-PLAN.md`. No persistent installation procedure is supported.
 
 ## Contributions
 
